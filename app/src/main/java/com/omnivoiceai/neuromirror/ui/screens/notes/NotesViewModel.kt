@@ -1,11 +1,9 @@
 package com.omnivoiceai.neuromirror.ui.screens.notes
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.omnivoiceai.neuromirror.data.database.note.EmotionDetected
 import com.omnivoiceai.neuromirror.data.database.note.Note
-import com.omnivoiceai.neuromirror.data.remote.generateQuestions
 import com.omnivoiceai.neuromirror.data.repositories.EmotionRepository
 import com.omnivoiceai.neuromirror.data.repositories.IntrospectionRepository
 import com.omnivoiceai.neuromirror.data.repositories.NoteRepository
@@ -22,7 +20,6 @@ class NotesViewModel(
     private val emotionRepository: EmotionRepository,
     private val introspectionRepository: IntrospectionRepository,
     private val questionRepository: QuestionRepository,
-    private val applicationContext: Context
 ): ViewModel() {
     val state = repository.notes.map { NotesState(it) }.stateIn(
         scope = viewModelScope,
@@ -51,10 +48,9 @@ class NotesViewModel(
         override fun generateQuestions(note: Note): Job = viewModelScope.launch {
             try {
                 // Use the new extension function for type-safe question generation
-                val response = introspectionRepository.generateQuestions(
-                    context = applicationContext,
-                    noteContent = note.content,
-                    noteId = note.id
+                val response = introspectionRepository.sendQuestion(
+                    userMessage = note.content,
+                    threadId = note.id.toString()
                 )
                 
                 // Parse and save questions using the response data

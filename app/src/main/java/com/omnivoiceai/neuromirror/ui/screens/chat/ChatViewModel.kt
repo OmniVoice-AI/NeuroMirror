@@ -3,9 +3,6 @@ package com.omnivoiceai.neuromirror.ui.screens.chat
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.omnivoiceai.neuromirror.data.remote.bodyText
-import com.omnivoiceai.neuromirror.data.remote.continueChat
-import com.omnivoiceai.neuromirror.data.remote.startChatIntrospection
 import com.omnivoiceai.neuromirror.data.repositories.IntrospectionRepository
 import com.omnivoiceai.neuromirror.data.repositories.NoteRepository
 import com.omnivoiceai.neuromirror.data.repositories.QuestionRepository
@@ -58,15 +55,14 @@ class ChatViewModel(
                     val initialMessage = buildInitialMessage(noteWithQuestions, questionsWithAnswers)
                     
                     // Send to backend directly without showing the configuration message
-                    val response = introspectionRepository.startChatIntrospection(
-                        context = context,
-                        initialMessage = initialMessage,
-                        noteId = noteId
+                    val response = introspectionRepository.sendMessage(
+                        userMessage = initialMessage,
+                        threadId = noteId.toString()
                     )
                     
                     // Add ONLY the assistant response to start the conversation
                     val assistantMessage = ChatMessage(
-                        content = response.bodyText,
+                        content = response.body,
                         isUser = false
                     )
                     
@@ -112,15 +108,14 @@ class ChatViewModel(
             // Send to backend
             viewModelScope.launch {
                 try {
-                    val response = introspectionRepository.continueChat(
-                        context = context,
+                    val response = introspectionRepository.sendMessage(
                         userMessage = userMessage,
-                        noteId = noteId
+                        threadId = noteId.toString()
                     )
                     
                     // Add assistant response
                     val assistantMessage = ChatMessage(
-                        content = response.bodyText,
+                        content = response.body,
                         isUser = false
                     )
                     

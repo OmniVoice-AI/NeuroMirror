@@ -2,7 +2,7 @@ package com.omnivoiceai.neuromirror.data.remote
 
 import kotlinx.serialization.Serializable
 
-sealed class IntrospectionResponse
+abstract class IntrospectionResponse
 
 @Serializable
 data class QuestionIntrospectionResponse(
@@ -14,4 +14,4 @@ data class QuestionIntrospectionResponse(
 data class ChatIntrospectionResponse(
     val body: String,
     val sources: List<String> = emptyList()
-) : IntrospectionResponse() 
+) : IntrospectionResponse()

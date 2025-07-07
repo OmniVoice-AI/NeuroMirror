@@ -28,6 +28,7 @@ import com.omnivoiceai.neuromirror.ui.screens.settings.theme.ThemeViewModel
 import com.omnivoiceai.neuromirror.ui.screens.splash.SplashScreen
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun NavGraph(
@@ -42,11 +43,11 @@ fun NavGraph(
         if (currentUser != null) NavigationRoute.HomeScreen
         else NavigationRoute.SplashScreen
 
-    val notesViewModel = koinViewModel<NotesViewModel>()
+    val notesViewModel = koinViewModel<NotesViewModel>(parameters = { parametersOf("Neuro") })
     val notesState by notesViewModel.state.collectAsStateWithLifecycle()
     val emotionViewModel = koinViewModel<EmotionViewModel>()
-    val questionViewModel = koinViewModel<QuestionViewModel>()
-    val chatViewModel = koinViewModel<ChatViewModel>()
+    val questionViewModel = koinViewModel<QuestionViewModel>(parameters = { parametersOf("Neuro") })
+    val chatViewModel = koinViewModel<ChatViewModel>(parameters = { parametersOf("Neuro") })
     val questionRepository = koinInject<QuestionRepository>()
 
     NavHost(

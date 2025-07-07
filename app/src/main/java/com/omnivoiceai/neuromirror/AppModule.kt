@@ -9,13 +9,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.omnivoiceai.neuromirror.data.database.AppDatabase
 import com.omnivoiceai.neuromirror.data.ml.EmotionModel
 import com.omnivoiceai.neuromirror.data.remote.ChatService
-import com.omnivoiceai.neuromirror.data.repositories.AuthRepository
-import com.omnivoiceai.neuromirror.data.repositories.EmotionRepository
-import com.omnivoiceai.neuromirror.data.repositories.IntrospectionRepository
-import com.omnivoiceai.neuromirror.data.repositories.NoteRepository
-import com.omnivoiceai.neuromirror.data.repositories.ProfileRepository
-import com.omnivoiceai.neuromirror.data.repositories.QuestionRepository
-import com.omnivoiceai.neuromirror.data.repositories.ThemeRepository
+import com.omnivoiceai.neuromirror.data.remote.createChatService
+import com.omnivoiceai.neuromirror.data.repositories.*
 import com.omnivoiceai.neuromirror.ui.screens.auth.login.LoginViewModel
 import com.omnivoiceai.neuromirror.ui.screens.chat.ChatViewModel
 import com.omnivoiceai.neuromirror.ui.screens.note_detail.EmotionViewModel
@@ -24,20 +19,24 @@ import com.omnivoiceai.neuromirror.ui.screens.profile.ProfileViewModel
 import com.omnivoiceai.neuromirror.ui.screens.questions.QuestionViewModel
 import com.omnivoiceai.neuromirror.ui.screens.settings.theme.ThemeViewModel
 import de.jensklingenberg.ktorfit.Ktorfit
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.named
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val Context.dataStore by preferencesDataStore("theme")
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("""
+        database.execSQL(
+            """
             CREATE TABLE IF NOT EXISTS `question_answers` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 `question_id` INTEGER NOT NULL,
@@ -46,7 +45,8 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
                 `selected_option_text` TEXT,
                 `created_at` INTEGER NOT NULL
             )
-        """)
+        """
+        )
     }
 }
 
@@ -66,14 +66,17 @@ val appModule = module {
                     encodeDefaults = true
                 })
             }
+            install(Logging) {
+                level = LogLevel.ALL
+            }
         }
     }
     single<ChatService> {
         Ktorfit.Builder()
-            .baseUrl("http://192.168.1.226:8000/")
+            .baseUrl("https://api.ai.digitalnext.business/")
             .httpClient(get<HttpClient>())
             .build()
-            .create()
+            .createChatService()
     }
 
     single { get<Context>().dataStore }
@@ -81,9 +84,9 @@ val appModule = module {
     single { ThemeRepository(get()) }
     viewModel { ThemeViewModel(get()) }
     viewModel { EmotionViewModel(get()) }
-    viewModel { NotesViewModel(get(), get(), get(), get(), get()) }
-    viewModel { QuestionViewModel(get(), get(), get()) }
-    viewModel { ChatViewModel(get(), get(), get()) }
+    viewModel { (modelName: String) -> NotesViewModel(get(), get(), get(named(modelName)), get()) }
+    viewModel { (modelName: String) -> QuestionViewModel(get(), get(), get(named(modelName))) }
+    viewModel { (modelName: String) -> ChatViewModel(get(named(modelName)), get(), get()) }
     single {
         Room.databaseBuilder(
             get(),
@@ -101,5 +104,5 @@ val appModule = module {
     single { EmotionRepository(get()) }
     viewModel { LoginViewModel(get()) }
 
-    single { IntrospectionRepository(get()) }
+    factory(named("Neuro")) { IntrospectionNeuroImpl(get(), get()) } bind IntrospectionRepository::class
 }

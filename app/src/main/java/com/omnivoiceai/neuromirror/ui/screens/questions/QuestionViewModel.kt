@@ -7,7 +7,6 @@ import androidx.navigation.NavController
 import com.omnivoiceai.neuromirror.data.database.note.Note
 import com.omnivoiceai.neuromirror.data.database.note.NoteWithQuestions
 import com.omnivoiceai.neuromirror.data.database.question.QuestionWithDetails
-import com.omnivoiceai.neuromirror.data.remote.generateQuestions
 import com.omnivoiceai.neuromirror.data.repositories.IntrospectionRepository
 import com.omnivoiceai.neuromirror.data.repositories.NoteRepository
 import com.omnivoiceai.neuromirror.data.repositories.QuestionRepository
@@ -59,10 +58,9 @@ class QuestionViewModel(
                 navController.navigate(NavigationRoute.LoadingScreen(note.id))
                 
                 // Use the new extension function for type-safe question generation
-                val response = introspectionRepository.generateQuestions(
-                    context = context,
-                    noteContent = note.content,
-                    noteId = note.id
+                val response = introspectionRepository.sendQuestion(
+                    userMessage = note.content,
+                    threadId = note.id.toString()
                 )
                 
                 // Parse and save questions using the response data
